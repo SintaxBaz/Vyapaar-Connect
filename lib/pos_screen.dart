@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'menu_item.dart';
 
+// 👇 NEW IMPORTS
+import 'screens/qr_screen.dart';
+import 'services/bill_service.dart';
 
 class POSScreen extends StatefulWidget {
   final List<MenuItem> menuItems;
@@ -22,14 +25,6 @@ class _POSScreenState extends State<POSScreen> {
     });
   }
 
-  void createPendingTransaction() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Pending transaction created (mock)"),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -41,7 +36,7 @@ class _POSScreenState extends State<POSScreen> {
         ),
       ),
 
-      // MAIN CONTENT
+      // ================= MAIN GRID =================
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: widget.menuItems.isEmpty
@@ -122,7 +117,7 @@ class _POSScreenState extends State<POSScreen> {
               ),
       ),
 
-      // BOTTOM TOTAL BAR
+      // ================= BOTTOM BAR =================
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -145,10 +140,35 @@ class _POSScreenState extends State<POSScreen> {
               ),
             ),
             ElevatedButton(
-              onPressed: total == 0 ? null : createPendingTransaction,
+              onPressed: total == 0
+                  ? null
+                  : () async {
+                      // Convert cart to backend-friendly data
+                      final items = cart.entries.map((e) {
+                        return {
+                          "name": e.key.name,
+                          "price": e.key.price,
+                          "qty": e.value,
+                        };
+                      }).toList();
+
+                      // Call backend (mocked)
+                      final qrUrl = await BillService.createBill(
+                        items: items,
+                        total: total.toDouble(),
+                      );
+
+                      // Open QR screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => QrScreen(qrData: qrUrl),
+                        ),
+                      );
+                    },
               style: ElevatedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                 ),
