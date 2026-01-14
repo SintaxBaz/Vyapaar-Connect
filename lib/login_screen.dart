@@ -21,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
         builder: (_) => const MenuPromptScreen(),
       ),
     );
+
   }
 
   Future<void> _handleGoogleSignIn() async {
@@ -29,40 +30,57 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final userCredential = await _authService.signInWithGoogle();
-      
-      if (userCredential != null && mounted) {
-        // Successfully signed in
-        debugPrint("Signed in as: ${userCredential.user?.email}");
-        
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Welcome, ${userCredential.user?.displayName ?? "User"}!'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        
-        // Navigate to next screen
-        Navigator.pushReplacement(
+      // ✅ CHECK FIRST: already logged in?
+      final currentUser = _authService.currentUser;
+
+      if (currentUser != null) {
+        debugPrint("Already signed in as: ${currentUser.email}");
+
+        Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => const MenuPromptScreen(),
           ),
         );
+
+  
+        return;
+      }
+
+      // 🔹 Not logged in → do Google sign-in
+      final userCredential = await _authService.signInWithGoogle();
+
+      if (userCredential != null && mounted) {
+        debugPrint("Signed in as: ${userCredential.user?.email}");
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Welcome, ${userCredential.user?.displayName ?? "User"}!',
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const MenuPromptScreen(),
+          ),
+        );
+
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Sign in failed: ${e.toString()}'),
+            content: Text('Sign in failed: $e'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
         );
       }
-      debugPrint("Sign in error: $e");
     } finally {
       if (mounted) {
         setState(() {
@@ -71,6 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
