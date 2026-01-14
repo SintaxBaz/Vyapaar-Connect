@@ -1,21 +1,111 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'manual_menu_screen.dart';
 
-class MenuPromptScreen extends StatelessWidget {
+import 'manual_menu_screen.dart';
+import 'menu_service.dart';
+
+class MenuPromptScreen extends StatefulWidget {
   const MenuPromptScreen({super.key});
 
-  Future<void> _openCamera(BuildContext context) async {
-    final picker = ImagePicker();
+  @override
+  State<MenuPromptScreen> createState() => _MenuPromptScreenState();
+}
 
-    final picked = await picker.pickImage(
-      source: ImageSource.camera,
+class _MenuPromptScreenState extends State<MenuPromptScreen> {
+  final _picker = ImagePicker();
+  final _menuService = MenuService();
+
+  bool _isProcessing = false;
+
+  Future<void> _pickImage(ImageSource source) async {
+    if (_isProcessing) return;
+
+    final picked = await _picker.pickImage(
+      source: source,
+      imageQuality: 85,
     );
-
     if (picked == null) return;
 
-    // TEMP: Later you will send this to MenuService.extractMenu()
-    debugPrint("Image captured: ${picked.path}");
+    setState(() {
+      _isProcessing = true;
+    });
+
+    try {
+      final items = await _menuService.extractMenu(File(picked.path));
+
+      if (!mounted) return;
+
+      if (items.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not detect any menu items. Try a clearer photo.'),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ManualMenuScreen(initialItems: items),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Menu extraction failed: $e'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    }
+  }
+
+  void _showPickOptions() {
+    if (_isProcessing) return;
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Camera'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Gallery'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -106,11 +196,11 @@ class MenuPromptScreen extends StatelessWidget {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton.icon(
-                    onPressed: () => _openCamera(context),
+                    onPressed: _isProcessing ? null : _showPickOptions,
                     icon: const Icon(Icons.camera_alt),
-                    label: const Text(
-                      "Capture Menu",
-                      style: TextStyle(
+                    label: Text(
+                      _isProcessing ? 'Processing…' : 'Capture Menu',
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -125,6 +215,11 @@ class MenuPromptScreen extends StatelessWidget {
                     ),
                   ),
                 ),
+
+                if (_isProcessing) ...[
+                  const SizedBox(height: 14),
+                  const LinearProgressIndicator(minHeight: 4),
+                ],
 
                 const SizedBox(height: 16),
 

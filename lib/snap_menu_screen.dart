@@ -5,25 +5,67 @@ import 'manual_menu_screen.dart';
 class SnapMenuScreen extends StatelessWidget {
   const SnapMenuScreen({super.key});
 
-  Future<void> _openCamera(BuildContext context) async {
-    final picker = ImagePicker();
+  // ───────────── IMAGE PICKER ─────────────
+  Future<void> _pickImage(BuildContext context, ImageSource source) async {
+    final ImagePicker picker = ImagePicker();
 
-    final picked = await picker.pickImage(
-      source: ImageSource.camera,
+    final XFile? pickedImage = await picker.pickImage(
+      source: source,
+      imageQuality: 85,
     );
 
-    if (picked == null) return;
+    if (pickedImage == null) return;
 
-    // TEMP: later connect to MenuService.extractMenu()
-    debugPrint("Captured image path: ${picked.path}");
+    debugPrint("Selected image path: ${pickedImage.path}");
+
+    // TODO (next step):
+    // Send image to OCR service
+    // MenuOCRService.extractMenu(pickedImage);
   }
 
+  // ───────────── CAMERA / GALLERY OPTIONS ─────────────
+  void _showPickOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text("Camera"),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(context, ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text("Gallery"),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(context, ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ───────────── UI ─────────────
   @override
   Widget build(BuildContext context) {
+    debugPrint("SnapMenuScreen loaded"); // 👈 ADD THIS LINE
     return Scaffold(
       backgroundColor: Colors.white,
 
-      // ─────────────────── APP BAR ───────────────────
+      // ───────── APP BAR ─────────
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -41,7 +83,7 @@ class SnapMenuScreen extends StatelessWidget {
         ),
       ),
 
-      // ─────────────────── BODY ───────────────────
+      // ───────── BODY ─────────
       body: Column(
         children: [
           const Spacer(),
@@ -82,7 +124,6 @@ class SnapMenuScreen extends StatelessWidget {
 
           const SizedBox(height: 40),
 
-          // Title
           const Text(
             'Digitize Your Menu',
             style: TextStyle(
@@ -94,9 +135,8 @@ class SnapMenuScreen extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // Subtitle
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 40),
             child: Text(
               'Snap a photo to build your POS',
               textAlign: TextAlign.center,
@@ -111,14 +151,14 @@ class SnapMenuScreen extends StatelessWidget {
         ],
       ),
 
-      // ─────────────────── ACTION BUTTONS ───────────────────
+      // ───────── ACTION BUTTONS ─────────
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Capture Menu → CAMERA DIRECT
+              // Capture Menu → CAMERA OR GALLERY
               SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -131,7 +171,7 @@ class SnapMenuScreen extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  onPressed: () => _openCamera(context),
+                  onPressed: () => _showPickOptions(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFF2A900),
                     foregroundColor: Colors.white,
@@ -145,7 +185,7 @@ class SnapMenuScreen extends StatelessWidget {
 
               const SizedBox(height: 14),
 
-              // Enter Menu Manually
+              // Manual Entry
               SizedBox(
                 width: double.infinity,
                 height: 52,
