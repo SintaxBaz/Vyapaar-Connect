@@ -22,7 +22,7 @@ class GeminiMenuService {
       return _parseViaDirectGemini(ocrText: trimmed);
     }
 
-    // Fallback: try to guess items from OCR lines.
+   
     return _parseHeuristically(trimmed);
   }
 
