@@ -25,6 +25,106 @@ class _POSScreenState extends State<POSScreen> {
     });
   }
 
+  void removeItem(MenuItem item) {
+    setState(() {
+      if (cart[item]! > 1) {
+        cart[item] = cart[item]! - 1;
+        total -= item.price;
+      } else {
+        total -= item.price * cart[item]!;
+        cart.remove(item);
+      }
+    });
+  }
+
+  void deleteItem(MenuItem item) {
+    setState(() {
+      total -= item.price * (cart[item] ?? 0);
+      cart.remove(item);
+    });
+  }
+
+  void editQuantity(MenuItem item, int newQty) {
+    setState(() {
+      if (newQty <= 0) {
+        deleteItem(item);
+      } else {
+        int difference = newQty - (cart[item] ?? 0);
+        total += item.price * difference;
+        cart[item] = newQty;
+      }
+    });
+  }
+
+  void _showEditDialog(BuildContext context, MenuItem item, int currentQty) {
+    int newQty = currentQty;
+    
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: Text("Edit ${item.name}"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("Quantity: $newQty"),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle, color: Colors.red),
+                      onPressed: () {
+                        if (newQty > 1) {
+                          setDialogState(() => newQty--);
+                        }
+                      },
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 8),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        newQty.toString(),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.add_circle, color: Colors.green),
+                      onPressed: () {
+                        setDialogState(() => newQty++);
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancel"),
+              ),
+              TextButton(
+                onPressed: () {
+                  editQuantity(item, newQty);
+                  Navigator.pop(context);
+                },
+                child: const Text("Update"),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -91,22 +191,41 @@ class _POSScreenState extends State<POSScreen> {
                           ),
                           if (qty > 0) ...[
                             const SizedBox(height: 10),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.deepPurple,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                "x$qty",
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // Edit button
+                                IconButton(
+                                  icon: const Icon(Icons.edit),
+                                  onPressed: () {
+                                    _showEditDialog(context, item, qty);
+                                  },
                                 ),
-                              ),
+                                // Quantity badge
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.deepPurple,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    "x$qty",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                // Delete button
+                                IconButton(
+                                  icon: const Icon(Icons.close,
+                                      color: Colors.red),
+                                  onPressed: () => deleteItem(item),
+                                ),
+                              ],
                             ),
                           ]
                         ],
