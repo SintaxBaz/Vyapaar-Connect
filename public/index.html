@@ -190,9 +190,9 @@
     <h1>Scan successful 🎉</h1>
     <p>Sign in with Google to instantly receive your loyalty points.</p>
 
-    <div class="points">+10 loyalty points</div>
+    <div id="points" class="points">+10 loyalty points</div>
 
-    <button onclick="signIn()" class="google-btn">
+    <button id="googleBtn" onclick="signIn()" class="google-btn">
       <img
         src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
         alt="Google"
@@ -202,16 +202,30 @@
 
     <div class="secure-text">Secure • No app required</div>
 
-    <!-- EXISTING -->
     <div id="status" class="status"></div>
-
-    <!-- 🔹 NEW (ADDED) -->
-    <div id="walletStatus" class="status" style="display:none;color:#6b7280;">
-      ⏳ Google Wallet sync will be enabled after approval
-    </div>
   </div>
 
   <script>
+    // 🔹 STEP 1: Read bill amount from URL
+    // Accept common parameter names; if missing/invalid, fall back to ₹100 (=> 10 points)
+    const params = new URLSearchParams(window.location.search);
+    const rawAmount =
+      params.get("amount") ??
+      params.get("total") ??
+      params.get("bill") ??
+      params.get("billAmount") ??
+      params.get("amt");
+
+    const parsedAmount = rawAmount == null ? NaN : Number(rawAmount);
+    const amount = Number.isFinite(parsedAmount) ? parsedAmount : 100;
+
+    // 🔹 STEP 2: Loyalty logic (₹10 = 1 point)
+    const points = Math.floor(Math.max(0, amount) / 10);
+
+    // 🔹 STEP 3: Update UI dynamically
+    document.getElementById("points").innerText =
+      `+${points} loyalty points`;
+
     function signIn() {
       const btn = document.querySelector(".google-btn");
       const status = document.getElementById("status");
@@ -237,7 +251,8 @@
         `;
 
         // Show success message
-        status.innerText = "✅ 10 loyalty points credited successfully!";
+        status.innerText =
+          `✅ ${points} loyalty points credited successfully!`;
       }, 1200);
     }
 </script>

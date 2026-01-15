@@ -11,8 +11,12 @@ class BillService {
 
     await Future.delayed(Duration(seconds: 1));
 
-    print("QR URL: https://vyapaar-connect-dfae0.web.app");
-    return "https://vyapaar-connect-dfae0.web.app";
+    // 🔹 Append bill amount to rewards URL
+    final billAmount = total.toStringAsFixed(0); // Remove decimals
+    final qrUrl = "https://vyapaar-connect-dfae0.web.app/?amount=$billAmount";
+    
+    print("QR URL: $qrUrl");
+    return qrUrl;
 
   }
 }
