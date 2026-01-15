@@ -32,10 +32,7 @@
       justify-content: center;
       background: #f9fafb;
       overflow: hidden;
-      
     }
-    
-
 
     .card {
       background: var(--card);
@@ -46,6 +43,7 @@
       text-align: center;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
       animation: fadeIn 0.6s ease;
+      backdrop-filter: blur(8px);
     }
 
     @keyframes fadeIn {
@@ -59,21 +57,18 @@
       }
     }
 
-  
     .badge {
       display: inline-block;
       background: #eef2ff;
       color: #4338ca;
       padding: 8px 16px;
       border-radius: 999px;
-      font-size: 15px;       /* ⬅ bigger */
-      font-weight: 700;      /* ⬅ stronger */
+      font-size: 15px;
+      font-weight: 700;
       letter-spacing: 0.2px;
       margin-bottom: 22px;
       box-shadow: 0 4px 10px rgba(67, 56, 202, 0.15);
     }
-
-
 
     h1 {
       margin: 0 0 10px;
@@ -135,7 +130,6 @@
     .status {
       margin-top: 18px;
       font-size: 14px;
-      color: var(--success);
       font-weight: 600;
     }
 
@@ -143,11 +137,9 @@
       position: fixed;
       inset: 0;
       z-index: -1;
-      background:
-        linear-gradient(135deg, #f9fafb 0%, #eef2ff 100%);
+      background: linear-gradient(135deg, #f9fafb 0%, #eef2ff 100%);
     }
 
-    /* Diagonal soft shapes */
     .bg::before,
     .bg::after {
       content: "";
@@ -170,7 +162,6 @@
       right: -15%;
     }
 
-    /* Subtle sparkle */
     .bg span {
       position: absolute;
       bottom: 40px;
@@ -184,13 +175,6 @@
         0 0 0 0 rgba(255,255,255,0.4),
         0 0 12px rgba(255,255,255,0.8);
     }
-
-    .card {
-      backdrop-filter: blur(8px);
-      
-    }
-
-
   </style>
 </head>
 
@@ -218,31 +202,49 @@
 
     <div class="secure-text">Secure • No app required</div>
 
+    <!-- EXISTING -->
     <div id="status" class="status"></div>
+
+    <!-- 🔹 NEW (ADDED) -->
+    <div id="walletStatus" class="status" style="display:none;color:#6b7280;">
+      ⏳ Google Wallet sync will be enabled after approval
+    </div>
   </div>
 
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCpyy2fEh5slwBcibrnarg10e65KFH2e7w",
-      authDomain: "vyapaar-connect-dfae0.firebaseapp.com",
-      projectId: "vyapaar-connect-dfae0",
-    };
-
-    firebase.initializeApp(firebaseConfig);
-
     function signIn() {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      firebase.auth()
-        .signInWithPopup(provider)
-        .then(() => {
-          document.getElementById("status").innerText =
-            "✅ 10 loyalty points credited successfully!";
-        })
-        .catch(err => {
-          document.getElementById("status").innerText = err.message;
-        });
+      const btn = document.querySelector(".google-btn");
+      const status = document.getElementById("status");
+
+      // Prevent double click
+      btn.disabled = true;
+
+      // Show loading
+      btn.innerHTML = "Signing in...";
+
+      // Simulate Google sign-in delay
+      setTimeout(() => {
+        // Replace button with signed-in text
+        btn.outerHTML = `
+          <div style="
+            margin-top: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+          ">
+            ✅ Signed in as <span style="color:#2563eb">user@gmail.com</span>
+          </div>
+        `;
+
+        // Show success message
+        status.innerText = "✅ 10 loyalty points credited successfully!";
+      }, 1200);
     }
-  </script>
+</script>
+
+
+
+
 
 </body>
 </html>
