@@ -199,13 +199,23 @@
       />
       <span>Continue with Google</span>
     </button>
-
-    <div class="secure-text">Secure • No app required</div>
-
     <div id="status" class="status"></div>
   </div>
 
   <script>
+    // 🔹 Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCpyy2fEh5slwBcibrnarg10e65KFH2e7w",
+      authDomain: "vyapaar-connect-dfae0.firebaseapp.com",
+      projectId: "vyapaar-connect-dfae0",
+      storageBucket: "vyapaar-connect-dfae0.firebasestorage.app",
+      messagingSenderId: "999920891491",
+      appId: "1:999920891491:web:8be4f1d3c49e51db7f1b08"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
     // 🔹 STEP 1: Read bill amount from URL
     // Accept common parameter names; if missing/invalid, fall back to ₹100 (=> 10 points)
     const params = new URLSearchParams(window.location.search);
@@ -219,26 +229,25 @@
     const parsedAmount = rawAmount == null ? NaN : Number(rawAmount);
     const amount = Number.isFinite(parsedAmount) ? parsedAmount : 100;
 
+    // DEBUG: log URL / amount parsing
+    console.log('URL search:', window.location.search);
+    console.log('rawAmount:', rawAmount, 'parsedAmount:', parsedAmount, 'effective amount:', amount);
+
     // 🔹 STEP 2: Loyalty logic (₹10 = 1 point)
     const points = Math.floor(Math.max(0, amount) / 10);
+    console.log('calculated points:', points);
 
     // 🔹 STEP 3: Update UI dynamically
     document.getElementById("points").innerText =
       `+${points} loyalty points`;
 
-    function signIn() {
-      const btn = document.querySelector(".google-btn");
-      const status = document.getElementById("status");
+    // 🔹 Check if user is already signed in
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        const btn = document.getElementById("googleBtn");
+        const status = document.getElementById("status");
 
-      // Prevent double click
-      btn.disabled = true;
-
-      // Show loading
-      btn.innerHTML = "Signing in...";
-
-      // Simulate Google sign-in delay
-      setTimeout(() => {
-        // Replace button with signed-in text
+        // Replace button with signed-in info
         btn.outerHTML = `
           <div style="
             margin-top: 14px;
@@ -246,16 +255,48 @@
             font-weight: 600;
             color: #374151;
           ">
-            ✅ Signed in as <span style="color:#2563eb">user@gmail.com</span>
+            ✅ Signed in as <span style="color:#2563eb">${user.email}</span>
           </div>
         `;
 
         // Show success message
         status.innerText =
-          `✅ ${points} loyalty points credited successfully!`;
-      }, 1200);
+          `✅ ${points} loyalty points credited to your account!`;
+
+        // Show Google Wallet sync message
+        const walletMsg = document.createElement("div");
+        walletMsg.style.marginTop = "16px";
+        walletMsg.style.fontSize = "13px";
+        walletMsg.style.color = "#6b7280";
+        walletMsg.style.fontStyle = "italic";
+        walletMsg.innerText = "⏳ Google Wallet sync will be enabled after approval";
+        status.parentNode.appendChild(walletMsg);
+      }
+    });
+
+    function signIn() {
+      const btn = document.getElementById("googleBtn");
+      const status = document.getElementById("status");
+
+      btn.disabled = true;
+      btn.innerHTML = "Signing in...";
+
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider)
+        .then((result) => {
+          console.log("Signed in as:", result.user.email);
+        })
+        .catch((error) => {
+          console.error("Sign-in error:", error);
+          btn.disabled = false;
+          btn.innerHTML = `
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
+            <span>Continue with Google</span>
+          `;
+          status.innerText = `❌ Error: ${error.message}`;
+        });
     }
-</script>
+  </script>
 
 
 
