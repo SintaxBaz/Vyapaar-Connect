@@ -6,7 +6,7 @@
         android:required="false" />
         
     <application
-        android:label="flutter_application_1"
+        android:label="Vyapaar Connect"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:requestLegacyExternalStorage="true">
